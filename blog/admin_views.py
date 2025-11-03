@@ -1233,38 +1233,144 @@ class EnhancedPostCreateView(StatusAdminCreateView):
         return context
 
     def form_valid(self, form):
+        """Enhanced form validation with tag and system processing."""
         # Auto assign author
         form.instance.author = self.request.user
 
-        # Handle journey assignment during post creation
-        journey_id = self.request.POST.get('learning_journey')
-        if journey_id:
-            try:
-                journey = Series.objects.get(id=journey_id)
-                # Create the post first
-                response = super().form_valid(form)
+        # Auto-generate slug if not provided
+        if not form.instance.slug and form.instance.title:
+            form.instance.slug = slugify(form.instance.title)
 
-                # Then add to journey
-                from .models import SeriesPost
-                last_order = journey.posts.aggregate(
-                    max_order=models.Max('order')
-                )['max_order'] or 0
-
-                SeriesPost.objects.create(
-                    series=journey,
-                    post=self.object,
-                    order=last_order + 1
-                )
-
-                messages.success(
-                    self.request,
-                    f'Discovery added to learning journey: {journey.title}'
-                )
-                return response
-            except Series.DoesNotExist:
-                pass
+        # Auto-calculate reading time if not set
+        if not form.instance.reading_time and form.instance.content:
+            content_words = len(form.instance.content.split())
+            form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
         
-        return super().form_valid(form)
+        # Handle save button actions
+        if 'save_draft' in self.request.POST:
+            form.instance.status = 'draft'
+        elif 'save_publish' in self.request.POST:
+            form.instance.status = 'published'
+        elif 'save_continue_learning' in self.request.POST:
+            # Save and redirect to create next post
+            form.instance.status = 'published'
+            self.continue_learning = True
+        
+        # Set published_date when publishing for the first time
+        if form.instance.status == 'published' and not form.instance.published_date:
+            form.instance.published_date = timezone.now()
+        
+        try:
+            # Save the post first
+            response = super().form_valid(form)
+
+            # Process tags from the custom tag input
+            self.process_tags()
+
+            # Process system connections
+            self.process_system_connections()
+
+            # Handle series assignment if provided
+            series_id = self.request.POST.get('series')
+            series_order = self.request.POST.get('series_order')
+
+            if series_id:
+                try:
+                    series = Series.objects.get(id=series_id)
+                    SeriesPost.objects.create(
+                        series=series,
+                        post=self.object,
+                        order=int(series_order) if series_order else 0
+                    )
+
+                except (Series.DoesNotExist, ValueError):
+                    pass
+            
+            messages.success(
+                self.request,
+                f'DataLog "{self.object.title}" created successfully!'
+            )
+
+            # Handle continue learning redirect
+            if hasattr(self, 'continue_learning') and self.continue_learning:
+                return redirect('aura_admin:blog:post_create')
+            
+            return response
+        
+        except Exception as e:
+            messages.error(
+                self.request,
+                f'Error creating post: {str(e)}'
+            )
+        
+            return self.form_invalid(form)
+    
+    def process_tags(self):
+        """Process tags from custom tag input field."""
+        tags_data = self.request.POST.get('tags_input', '') or self.request.POST.get('tags', '')
+
+        if tags_data:
+            # Clear existing tags (shouldn't be any for create view but safe to call)
+            self.object.tags.clear()
+
+            # Split tags by comma and clean them up
+            tag_names = [tag.strip().lower().replace(' ', '-') for tag in tags_data.split(',') if tag.strip()]
+
+            for tag_name in tag_names:
+                if tag_name:
+                    tag, created = Tag.objects.get_or_create(
+                        name=tag_name,
+                        defaults={'slug': slugify(tag_name)}
+                    )
+                    self.object.tags.add(tag)
+    
+    def process_system_connections(self):
+        """Process system connections from the custom JavaScript system."""
+        print("DEBUG: Processing system connections...")
+
+        # Clear existing system connections
+        SystemLogEntry.objects.filter(post=self.object).delete()
+
+        # Get system IDs from custom field
+        system_ids_data = self.request.POST.get('system_connections_input', '').strip()
+        print(f"DEBUG: System connections input: '{system_ids_data}'")
+
+        if system_ids_data:
+            # Split by comma and clean up
+            system_ids = [
+                int(sid.strip())
+                for sid in system_ids_data.split(",")
+                if sid.strip().isdigit()
+            ]
+            print(f"DEBUG: Parsed system IDs: {system_ids}")
+
+            # Create new connections
+            for system_id in system_ids:
+                try:
+                    system = SystemModule.objects.get(id=system_id)
+
+                    # Generate log entry ID
+                    existing_count = SystemLogEntry.objects.filter(system=system).count()
+                    log_entry_id = f"SYS-{system.id:03d}-LOG-{existing_count + 1:03d}"
+
+                    # Create system connection
+                    connection = SystemLogEntry.objects.create(
+                        post=self.object,
+                        system=system,
+                        connection_type=self.request.POST.get(f'connection_type_{system_id}', 'development'),
+                        relationship_priority=int(self.request.POST.get(f'priority_{system_id}', 2)),
+                        log_entry_id=log_entry_id
+                    )
+                    print(f"DEBUG: Created system connection: {system.title} -> {connection.log_entry_id}")
+                
+                except SystemModule.DoesNotExist:
+                    print(f"DEBUG: System with ID {system_id} not found")
+                    continue
+                except ValueError as e:
+                    print(f"DEBUG: Error creating connection for system {system_id}: {e}")
+                    continue
+        else:
+            print("DEBUG: No system connections found")
 
 
 class LearningJourneyListView(BaseAdminListView):
