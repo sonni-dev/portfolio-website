@@ -355,7 +355,7 @@ class Series(models.Model):
     """Model for creating blog post series."""
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    description = models.TextField(blank=True)
+    description = MarkdownxField(blank=True, help_text="Series description with Markdown formatting support")
 
     # Visual Enhancement
     thumbnail = models.ImageField(upload_to="blog/series/", null=True, blank=True, help_text="Series thumbnail image (400x300px recommended)")
