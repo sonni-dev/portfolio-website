@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from django.views.generic import ListView, DetailView, DeleteView, CreateView, UpdateView
 from django.views.generic.detail import SingleObjectMixin
 # from django.views.generic.edit import CreateView, UpdateView
@@ -36,20 +37,6 @@ import json
 from .models import Post, Category, Tag, Series, SeriesPost, PostView, Subscriber
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 from .templatetags.datalog_tags import datalog_search_suggestions
-
-
-class SeriesDetailView(DetailView):
-    """Series detail page showing all posts in the series."""
-    
-    model = Series
-    template_name = "blog/series_detail.html"
-    context_object_name = 'series'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Get all posts in this series, ordered
-        context['posts'] = self.object.posts.select_related('post').order_by('order')
-        return context
 
 
 class PostListView(ListView):
@@ -1617,3 +1604,217 @@ def get_share_data(request, slug):
         'text': post.excerpt or f'Check out this post: {post.title}',
         'url': post_url,
     })
+
+
+# ========== Series views ==========
+
+
+class SeriesOverviewView(ListView):
+    """
+    View for series overview page - shows all series w stats.
+    URL: /datalogs/series/
+    """
+
+    model = Series
+    template_name = "blog/series.html"
+    context_object_name = "series_list"
+
+    def get_queryset(self):
+        # Get all series w post counts (only count published posts)
+        return Series.objects.annotate(
+            published_post_count=Count(
+                "posts__post",
+                filter=Q(posts__post__status="published")
+            )
+        ).filter(published_post_count__gt=0).order_by('-is_featured', '-updated_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Calculate overview stats
+        series_list = context['series_list']
+        total_series = series_list.count()
+        total_posts_in_series = Post.objects.filter(
+            series_associations__isnull=False,
+            status='published'
+        ).distinct().count()
+
+        # Get most popular series (by post count)
+        most_popular = series_list.first() if series_list else None
+
+        # Get featured series
+        featured_series = series_list.filter(is_featured=True)
+
+        # Series completion stats
+        completed_series = series_list.filter(is_complete=True).count()
+        in_progress_series = series_list.filter(is_complete=False).count()
+
+        # Calculate total reading time across all series
+        total_reading_time = sum(
+            series.total_reading_time for series in series_list
+        )
+
+        # Avg posts per series
+        avg_posts_per_series = round(
+            total_posts_in_series / total_series, 1
+        ) if total_series > 0 else 0
+
+        # Series with recent activity (posts in last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        series_with_recent_posts = Series.objects.filter(
+            posts__post__published_date__gte=thirty_days_ago,
+            posts__post__status='published'
+        ).distinct().count()
+
+        # Add recent posts to each series (for preview)
+        for series in series_list:
+            series.recent_posts = Post.objects.filter(
+                series_associations__series=series,
+                status='published'
+            ).order_by('series_associations__order')[:3]
+
+            # Calculate actual post count for display
+            series.actual_post_count = series.posts.filter(
+                post__status='published'
+            ).count()
+
+        # Difficulty distribution
+        difficulty_stats = {}
+        for choice in Series._meta.get_field('difficulty_level').choices:
+            count = series_list.filter(difficulty_level=choice[0]).count()
+            difficulty_stats[choice[1]] = count
+
+        context.update({
+            # Overview stats
+            'total_series': total_series,
+            'total_posts_in_series': total_posts_in_series,
+            'most_popular_series': most_popular,
+            'featured_series': featured_series,
+            'completed_series': completed_series,
+            'in_progress_series': in_progress_series,
+            'total_reading_time': total_reading_time,
+            'avg_posts_per_series': avg_posts_per_series,
+            'series_with_recent_activity': series_with_recent_posts,
+            'difficulty_stats': difficulty_stats,
+
+            # Page metadata
+            'page_title': 'Learning Series',
+            'page_subtitle': 'Structured learning paths and technical journeys',
+            'page_icon': 'fas fa-layer-group',
+
+            # Template control flags
+            'show_overview': True,  # Showing all series
+            'show_breadcrumbs': True,
+            'show_stats': True, 
+        })
+
+        return context
+
+
+
+class SeriesDetailView(ListView):
+    """Series detail page showing all posts in the series."""
+    
+    """
+    View for individual series detail page - shows posts in a specific series.
+    URL: /datalogs/series/<slug>/
+    """
+    model = Post
+    template_name = "blog/series.html"
+    context_object_name = "posts"
+    paginate_by = 12  # More posts since they're ordered/sequential
+
+    def get_queryset(self):
+        # Get specific series
+        self.series = get_object_or_404(Series, slug=self.kwargs['slug'])
+
+        # Get posts in this series, ordered by SeriesPost.order
+        return Post.objects.filter(
+            series_associations__series=self.series,
+            status='published'
+        ).order_by('series_associations__order').select_related(
+            'category', 'author'
+        ).prefetch_related('tags')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Series-specific stats
+        series_posts = self.get_queryset()
+        series_post_count = series_posts.count()
+        series_avg_reading_time = series_posts.aggregate(
+            avg_time=Avg('reading_time')
+        )['avg_time'] or 0
+
+        # Calculate progress percentage
+        if self.series.is_complete:
+            progress_percentage = 100
+        else:
+            # Could be based on target, or just completion status
+            progress_percentage = self.series.get_progress_percentage()
+        
+        # Related series (same difficulty level, excluding current)
+        related_series = Series.objects.exclude(
+            id=self.series.id
+        ).filter(
+            difficulty_level=self.series.difficulty_level
+        ).annotate(
+            published_post_count=Count(
+                'posts__post',
+                filter=Q(posts__post__status='published')
+            )
+        ).filter(published_post_count__gt=0).order_by('-is_featured', '-updated_at')[:4]
+
+        # Get ordered posts with their position info
+        for post in series_posts:
+            try:
+                series_post = SeriesPost.objects.get(
+                    series=self.series,
+                    post=post
+                )
+                post.series_order = series_post.order
+                # Check if there's a next/previous
+                post.has_next = SeriesPost.objects.filter(
+                    series=self.series,
+                    order__gt=series_post.order
+                ).exists()
+
+                post.has_previous = SeriesPost.objects.filter(
+                    series=self.series,
+                    order__lt=series_post.order
+                ).exists()
+            except SeriesPost.DoesNotExist:
+                post.series_order = None
+
+        context.update({
+            # Series-specific data
+            'series': self.series,
+            'series_slug': self.kwargs['slug'],
+            # Showing specific series
+            'show_overview': False,
+
+            # Page metadata
+            'page_title': self.series.title,
+            "page_subtitle": self.series.description or f"A {self.series.get_difficulty_level_display().lower()} learning series",
+            "page_icon": "fas fa-layer-group",
+
+            # Series stats
+            'series_post_count': series_post_count,
+            'series_avg_reading_time': series_avg_reading_time,
+            'series_total_reading_time': self.series.total_reading_time,
+            'progress_percentage': progress_percentage,
+            'related_series': related_series,
+
+            # Series metadata
+            'difficulty_level': self.series.difficulty_level,
+            'difficulty_display': self.series.get_difficulty_level_display(),
+            'is_complete': self.series.is_complete,
+            'is_featured': self.series.is_featured,
+
+            # Template control flags
+            'show_breadcrumbs': True,
+            'show_filters': False,  # Series posts are sequential, not filtered
+            'show_stats': True,
+        })
+
+        return context
