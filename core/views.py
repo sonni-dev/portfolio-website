@@ -913,7 +913,7 @@ class EnhancedResumeDownloadView(TemplateView):
             'title': 'Python Developer',
             'subtitle': 'EHS Professional Transitioning to Software Development',
             'email': 'hello@aura.com',
-            'website': 'https://sonnis-aura.com',
+            'website': 'https://sonni.dev',
             'location': 'Raleigh, NC',
             'phone': None, 
         }
