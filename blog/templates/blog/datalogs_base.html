@@ -57,6 +57,11 @@
                     <span>Categories</span>
                     <span class="stat-badge">{{ total_categories|default:"5" }}</span>
                 </a>
+                <a href="{% url 'blog:series_overview' %}" class="subnav-action-btn {% if 'series' in request.resolver_match.view_name %}active{% endif %}">
+                    <i class="fas fa-icons subnav-icon"></i>
+                    <span>Series</span>
+                    <span class="stat-badge">{{ series_count|default:"3" }}</span>
+                </a>
                 <a href="{% url 'blog:bookmarks' %}" class="subnav-action-btn {% if 'bookmarks' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-bookmark"></i>
                     My Bookmarks

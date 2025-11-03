@@ -1,4 +1,4 @@
-from blog.models import Post, Category, Tag
+from blog.models import Post, Category, Tag, Series
 from django.urls import reverse
 from django.utils import timezone
 
@@ -44,4 +44,5 @@ def blog_context(request):
             'system_status': 'operational',
             'last_updated': timezone.now(),
         },
+        "series_count": Series.objects.count(),
     }

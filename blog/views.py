@@ -1705,7 +1705,7 @@ class SeriesOverviewView(ListView):
             # Template control flags
             'show_overview': True,  # Showing all series
             'show_breadcrumbs': True,
-            'show_stats': True, 
+            'show_stats': False, 
         })
 
         return context
