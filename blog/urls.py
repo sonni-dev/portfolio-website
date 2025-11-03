@@ -6,6 +6,9 @@ urlpatterns = [
     # Public blog urls - Post views
     path("", views.PostListView.as_view(), name="post_list"),
     path("post/<slug:slug>/", views.PostDetailView.as_view(), name="post_detail"),
+
+    # Series detail
+    path("series/<slug:slug>/", views.SeriesDetailView.as_view(), name="series_detail"),
     
     # Category views
     path(

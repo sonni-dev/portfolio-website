@@ -38,6 +38,20 @@ from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 from .templatetags.datalog_tags import datalog_search_suggestions
 
 
+class SeriesDetailView(DetailView):
+    """Series detail page showing all posts in the series."""
+    
+    model = Series
+    template_name = "blog/series_detail.html"
+    context_object_name = 'series'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get all posts in this series, ordered
+        context['posts'] = self.object.posts.select_related('post').order_by('order')
+        return context
+
+
 class PostListView(ListView):
     """Enhanced post list view with search integration."""
     model = Post
