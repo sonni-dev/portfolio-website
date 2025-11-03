@@ -1814,7 +1814,7 @@ class SeriesDetailView(ListView):
             # Template control flags
             'show_breadcrumbs': True,
             'show_filters': False,  # Series posts are sequential, not filtered
-            'show_stats': True,
+            'show_stats': False,
         })
 
         return context
