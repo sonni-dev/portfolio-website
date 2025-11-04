@@ -58,9 +58,9 @@
                     <span class="stat-badge">{{ total_categories|default:"5" }}</span>
                 </a>
                 <a href="{% url 'blog:series_overview' %}" class="subnav-action-btn {% if 'series' in request.resolver_match.view_name %}active{% endif %}">
-                    <i class="fas fa-icons subnav-icon"></i>
+                    <i class="fas fa-layer-group subnav-icon"></i>
                     <span>Series</span>
-                    <span class="stat-badge">{{ series_count|default:"3" }}</span>
+                    <span class="stat-badge">{{ total_series|default:"3" }}</span>
                 </a>
                 <a href="{% url 'blog:bookmarks' %}" class="subnav-action-btn {% if 'bookmarks' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-bookmark"></i>
@@ -100,16 +100,18 @@
             
             <!-- Quick Actions -->
             <div class="subnav-actions">
-                {% if user.is_authenticated %}
+                {% comment %} {% if user.is_authenticated %}
                 <a href="{% url 'aura_admin:blog:post_create' %}" class="subnav-action-btn">
                     <i class="fas fa-plus"></i>
                     <span>New Entry</span>
                 </a>
-                {% endif %}
+                {% endif %} {% endcomment %}
+                {% if show_filters %}
                 <button class="subnav-action-btn" id="datalogsFilterToggle">
                     <i class="fas fa-filter"></i>
                     <span>Filters</span>
                 </button>
+                {% endif %}
                 {% comment %} Temp nav to search page until toggle fixed  {% endcomment %}
                 <a href="{% url 'blog:search' %}" class="subnav-action-btn">
                     <i class="fas fa-search"></i>

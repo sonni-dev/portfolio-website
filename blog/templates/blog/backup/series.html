@@ -1,0 +1,575 @@
+{% extends "blog/datalogs_base.html" %}
+{% load static aura_filters datalog_tags %}
+
+{% block datalogs_title %}{% if show_overview %}Learning Series{% else %}{{ series.title }}{% endif %}{% endblock %}
+
+{% block datalogs_css %}
+<style>
+    /* Series-specific styling */
+    .series-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--border-radius-md);
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: var(--font-code);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .difficulty-beginner {
+        background: rgba(74, 222, 128, 0.2);
+        color: #4ade80;
+        border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    
+    .difficulty-intermediate {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .difficulty-advanced {
+        background: rgba(251, 146, 60, 0.2);
+        color: #fb923c;
+        border: 1px solid rgba(251, 146, 60, 0.3);
+    }
+    
+    .difficulty-expert {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .series-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--border-radius-md);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-complete {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .status-in-progress {
+        background: rgba(234, 179, 8, 0.2);
+        color: #eab308;
+        border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+    
+    .series-progress-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .series-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-teal), var(--color-lavender));
+        border-radius: 4px;
+        transition: width 0.6s ease;
+        position: relative;
+    }
+    
+    .series-progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    .series-card {
+        background: var(--gradient-glass), rgba(13, 13, 31, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-xl);
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .series-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(179, 157, 219, 0.3);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 30px rgba(179, 157, 219, 0.15);
+    }
+    
+    .series-thumbnail {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: var(--border-radius-md);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .series-thumbnail-placeholder {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, var(--color-navy), var(--color-lavender));
+        border-radius: var(--border-radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .series-thumbnail-placeholder i {
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .series-order-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: rgba(179, 157, 219, 0.2);
+        border: 1px solid rgba(179, 157, 219, 0.3);
+        border-radius: 50%;
+        font-family: var(--font-code);
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--color-lavender);
+        margin-right: var(--spacing-sm);
+        flex-shrink: 0;
+    }
+    
+    .series-overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: var(--spacing-xl);
+        margin-top: var(--spacing-xl);
+    }
+    
+    .series-stat-card {
+        background: rgba(255, 255, 255, 0.03);
+        padding: var(--spacing-lg);
+        border-radius: var(--border-radius-md);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .series-stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--color-lavender);
+        font-family: var(--font-code);
+        line-height: 1;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .series-stat-label {
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 500;
+    }
+    
+    .series-post-card {
+        background: var(--gradient-glass), rgba(13, 13, 31, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-lg);
+        transition: all var(--transition-normal);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .series-post-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(179, 157, 219, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 20px rgba(179, 157, 219, 0.1);
+    }
+</style>
+{% endblock %}
+
+<!-- Breadcrumb -->
+{% block datalogs_breadcrumbs %}
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+{% if series %}
+<a href="{% url 'blog:series_overview' %}" class="breadcrumb-item"><i class="fas fa-layer-group"></i> Series</a>
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+<span class="breadcrumb-item active">{{ series.title }}</span>
+{% else %}
+<span class="breadcrumb-item active">Series Overview</span>
+{% endif %}
+{% endblock %}
+
+{% block datalogs_content %}
+<div class="datalogs-main-content">
+    
+    {% if show_overview %}
+    {# ========== SERIES OVERVIEW PAGE ========== #}
+    
+    <!-- Page Header -->
+    <div class="datalog-unified-container" style="margin-bottom: var(--spacing-xl);">
+        <div class="unified-content-text">
+            <div class="unified-section-header" style="margin-bottom: var(--spacing-lg);">
+                <i class="{{ page_icon }} unified-section-icon"></i>
+                <div>
+                    <h1 class="unified-section-title">{{ page_title }}</h1>
+                    <p class="unified-section-subtitle">{{ page_subtitle }}</p>
+                </div>
+            </div>
+            
+            <!-- Overview Stats Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-md);">
+                <div class="series-stat-card">
+                    <div class="series-stat-value">{{ total_series }}</div>
+                    <div class="series-stat-label">Series</div>
+                </div>
+                <div class="series-stat-card">
+                    <div class="series-stat-value">{{ total_posts_in_series }}</div>
+                    <div class="series-stat-label">Total Posts</div>
+                </div>
+                <div class="series-stat-card">
+                    <div class="series-stat-value">{{ completed_series }}</div>
+                    <div class="series-stat-label">Completed</div>
+                </div>
+                <div class="series-stat-card">
+                    <div class="series-stat-value">{{ total_reading_time|format_duration }}</div>
+                    <div class="series-stat-label">Reading Time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Series Grid -->
+    <div class="series-overview-grid">
+        {% for series in series_list %}
+        <div class="series-card">
+            <a href="{% url 'blog:series_detail' slug=series.slug %}" style="text-decoration: none; color: inherit;">
+                
+                <!-- Thumbnail -->
+                {% if series.thumbnail %}
+                <img src="{{ series.thumbnail.url }}" alt="{{ series.title }}" class="series-thumbnail">
+                {% else %}
+                <div class="series-thumbnail-placeholder">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                {% endif %}
+                
+                <!-- Series Info -->
+                <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: var(--spacing-sm); color: var(--color-text);">
+                    {{ series.title }}
+                </h3>
+                
+                {% if series.description %}
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: var(--spacing-md);">
+                    {{ series.description|truncatewords:25 }}
+                </p>
+                {% endif %}
+                
+                <!-- Badges -->
+                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
+                    <span class="series-badge difficulty-{{ series.difficulty_level }}">
+                        {{ series.get_difficulty_level_display }}
+                    </span>
+                    {% if series.is_complete %}
+                    <span class="series-status-badge status-complete">
+                        <i class="fas fa-check-circle"></i>
+                        Complete
+                    </span>
+                    {% else %}
+                    <span class="series-status-badge status-in-progress">
+                        <i class="fas fa-spinner"></i>
+                        In Progress
+                    </span>
+                    {% endif %}
+                    {% if series.is_featured %}
+                    <span class="series-badge" style="background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">
+                        <i class="fas fa-star"></i> Featured
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Stats -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm); text-align: center; padding-top: var(--spacing-md); border-top: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: var(--spacing-sm);">
+                    <div>
+                        <div style="font-weight: 700; color: var(--color-text); font-size: 1.2rem;">{{ series.actual_post_count }}</div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase;">Posts</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: var(--color-text); font-size: 1.2rem;">{{ series.total_reading_time|format_duration }}</div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase;">Duration</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: var(--color-text); font-size: 1.2rem;">
+                            {% if series.is_complete %}100{% else %}{{ series.get_progress_percentage|floatformat:0 }}{% endif %}%
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase;">Progress</div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="series-progress-bar">
+                    <div class="series-progress-fill" style="width: {% if series.is_complete %}100{% else %}{{ series.get_progress_percentage|floatformat:0 }}{% endif %}%;"></div>
+                </div>
+                
+                <!-- Recent Posts Preview -->
+                {% if series.recent_posts %}
+                <div style="margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div style="font-size: 0.7rem; font-weight: 600; color: var(--color-lavender); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--spacing-xs);">
+                        Recent Posts
+                    </div>
+                    {% for post in series.recent_posts %}
+                    <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                        • {{ post.title|truncatechars:40 }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    {# ========== SERIES DETAIL PAGE ========== #}
+    
+    <!-- Series Header -->
+    <div class="datalog-unified-container" style="margin-bottom: var(--spacing-xl);">
+        <div class="unified-hero-grid">
+            
+            <!-- LEFT: Series Info and Stats -->
+            <div class="unified-content-text">
+                
+                
+                
+                <!-- Series Title -->
+                <div class="unified-section-header" style="margin-bottom: var(--spacing-lg);">
+                    <i class="{{ page_icon }} unified-section-icon"></i>
+                    <div>
+                        <h1 class="unified-section-title">{{ series.title }}</h1>
+                        <p class="unified-section-subtitle">{{ page_subtitle }}</p>
+                    </div>
+                </div>
+                
+                <!-- Series Badges -->
+                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
+                    <span class="series-badge difficulty-{{ difficulty_level }}">
+                        <i class="fas fa-signal"></i>
+                        {{ difficulty_display }}
+                    </span>
+                    {% if is_complete %}
+                    <span class="series-status-badge status-complete">
+                        <i class="fas fa-check-circle"></i>
+                        Complete
+                    </span>
+                    {% else %}
+                    <span class="series-status-badge status-in-progress">
+                        <i class="fas fa-spinner"></i>
+                        In Progress
+                    </span>
+                    {% endif %}
+                    {% if is_featured %}
+                    <span class="series-badge" style="background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">
+                        <i class="fas fa-star"></i> Featured
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Series Stats Grid -->
+                <div class="unified-stats-grid">
+                    <div class="unified-stat-item">
+                        <i class="fas fa-book"></i>
+                        <span>{{ series_post_count }} Post{{ series_post_count|pluralize }} in Series</span>
+                    </div>
+                    
+                    <div class="unified-stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ series_total_reading_time|format_duration }} Total Time</span>
+                    </div>
+                    
+                    <div class="unified-stat-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>{{ progress_percentage|floatformat:0 }}% Progress</span>
+                    </div>
+                    
+                    <div class="unified-stat-item">
+                        <i class="fas fa-stopwatch"></i>
+                        <span>{{ series_avg_reading_time|floatformat:0 }} Avg Minutes</span>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div style="margin-top: var(--spacing-lg);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs);">
+                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--color-lavender);">Series Progress</span>
+                        <span style="font-size: 0.9rem; color: var(--color-text-secondary);">{{ progress_percentage|floatformat:0 }}%</span>
+                    </div>
+                    <div class="series-progress-bar">
+                        <div class="series-progress-fill" style="width: {{ progress_percentage|floatformat:0 }}%;"></div>
+                    </div>
+                </div>
+                
+                <!-- Related Series -->
+                {% if related_series %}
+                <div style="margin-top: var(--spacing-xl); padding-top: var(--spacing-lg); border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+                        <i class="fas fa-layer-group" style="color: var(--color-lavender);"></i>
+                        <span style="font-size: 1rem; font-weight: 600; color: var(--color-text);">Related Series</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--spacing-sm);">
+                        {% for rel_series in related_series %}
+                        <a href="{% url 'blog:series_detail' slug=rel_series.slug %}" 
+                           style="padding: var(--spacing-md); background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--border-radius-md); text-decoration: none; color: inherit; display: block; transition: all 0.3s;"
+                           onmouseover="this.style.background='rgba(179, 157, 219, 0.05)'; this.style.borderColor='rgba(179, 157, 219, 0.2)';"
+                           onmouseout="this.style.background='rgba(255, 255, 255, 0.03)'; this.style.borderColor='rgba(255, 255, 255, 0.08)';">
+                            <div style="font-size: 0.9rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.25rem;">
+                                {{ rel_series.title|truncatechars:30 }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+                                {{ rel_series.published_post_count }} posts
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="unified-actions-section">
+                    <a href="{% url 'blog:series_overview' %}" class="unified-action-btn">
+                        <i class="fas fa-layer-group"></i>
+                        All Series
+                    </a>
+                </div>
+            </div>
+            
+            <!-- RIGHT: Series Thumbnail -->
+            <div class="unified-content-media">
+                {% if series.thumbnail %}
+                <img src="{{ series.thumbnail.url }}" alt="{{ series.title }}" style="width: 100%; border-radius: var(--border-radius-lg); border: 1px solid rgba(255, 255, 255, 0.1);">
+                {% else %}
+                <div class="series-thumbnail-placeholder" style="height: 400px;">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Series Posts List -->
+    {% if posts %}
+    <div class="unified-section-header" style="margin-bottom: var(--spacing-lg);">
+        <i class="fas fa-list-ol"></i>
+        <div>
+            <h2 class="unified-section-title" style="font-size: 1.5rem;">Posts in This Series</h2>
+            <p class="unified-section-subtitle">Follow along in order for the best learning experience</p>
+        </div>
+    </div>
+    
+    <div>
+        {% for post in posts %}
+        <div class="series-post-card">
+            
+            <!-- Order Badge -->
+            <div class="series-order-badge">{{ post.series_order|default:forloop.counter }}</div>
+            
+            <!-- Post Content -->
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap; margin-bottom: var(--spacing-xs);">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--color-lavender); text-transform: uppercase;">
+                        Part {{ post.series_order|default:forloop.counter }}
+                    </span>
+                    {% if post.category %}
+                    <span style="color: var(--color-text-tertiary);">•</span>
+                    <a href="{% url 'blog:category' slug=post.category.slug %}" style="font-size: 0.75rem; color: var(--color-teal); text-decoration: none;">
+                        {{ post.category.name }}
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <h3 style="margin-bottom: var(--spacing-sm);">
+                    <a href="{{ post.get_absolute_url }}" style="color: var(--color-text); text-decoration: none; font-size: 1.1rem; font-weight: 600;">
+                        {{ post.title }}
+                    </a>
+                </h3>
+                
+                {% if post.excerpt %}
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: var(--spacing-sm);">
+                    {{ post.excerpt|truncatewords:30 }}
+                </p>
+                {% endif %}
+                
+                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-md); font-size: 0.85rem; color: var(--color-text-tertiary);">
+                    <span><i class="fas fa-clock"></i> {{ post.reading_time|format_duration }}</span>
+                    <span><i class="fas fa-calendar"></i> {{ post.published_date|date:"M d, Y" }}</span>
+                    {% if post.tags.all %}
+                    <span>
+                        <i class="fas fa-tags"></i>
+                        {% for tag in post.tags.all|slice:":3" %}
+                            {{ tag.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Action -->
+            <div style="flex-shrink: 0;">
+                <a href="{{ post.get_absolute_url }}" class="unified-action-btn" style="white-space: nowrap;">
+                    Read Post
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div style="margin-top: var(--spacing-xl); text-align: center;">
+        <div class="pagination" style="display: inline-flex; gap: var(--spacing-sm); padding: var(--spacing-md); background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-lg);">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" style="padding: var(--spacing-sm) var(--spacing-md); color: var(--color-lavender); text-decoration: none;">&laquo; First</a>
+                <a href="?page={{ page_obj.previous_page_number }}" style="padding: var(--spacing-sm) var(--spacing-md); color: var(--color-lavender); text-decoration: none;">&lsaquo; Previous</a>
+            {% endif %}
+            
+            <span style="padding: var(--spacing-sm) var(--spacing-md); color: var(--color-text);">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" style="padding: var(--spacing-sm) var(--spacing-md); color: var(--color-lavender); text-decoration: none;">Next &rsaquo;</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" style="padding: var(--spacing-sm) var(--spacing-md); color: var(--color-lavender); text-decoration: none;">Last &raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="datalog-unified-container" style="text-align: center; padding: var(--spacing-xxl);">
+        <i class="fas fa-layer-group" style="font-size: 4rem; color: var(--color-text-tertiary); margin-bottom: var(--spacing-lg); display: block;"></i>
+        <h3 style="color: var(--color-text); margin-bottom: var(--spacing-sm);">No Posts Yet</h3>
+        <p style="color: var(--color-text-secondary);">This series is under construction. Check back soon!</p>
+    </div>
+    {% endif %}
+    
+    {% endif %}
+    
+</div>
+{% endblock %}

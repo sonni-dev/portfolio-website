@@ -43,6 +43,7 @@ def blog_context(request):
             'latest_entry': Post.objects.filter(status='published').first(),
             'system_status': 'operational',
             'last_updated': timezone.now(),
+            'total_series': Series.objects.count(),
         },
-        "series_count": Series.objects.count(),
+        "total_series": Series.objects.count(),
     }
