@@ -732,7 +732,7 @@ def category_debug_info(category):
 
 
 @register.simple_tag
-def smart_unified_container_vars(post=None, category=None, tag=None, archive=None, search=None, theme="auto"):
+def smart_unified_container_vars(post=None, category=None, tag=None, archive=None, search=None, series=None, theme="auto"):
     """
     Generate CSS custom properties for unified containers based on content type.
     Usage:
@@ -772,6 +772,9 @@ def smart_unified_container_vars(post=None, category=None, tag=None, archive=Non
         # Coral theme for search 
         # return "--container-category-rgb: 38, 198, 218;"
         theme = "warning"
+    elif not category and series:
+        # Mint theme for series
+        theme = "success"
 
     return unified_container_vars(category, theme)
 

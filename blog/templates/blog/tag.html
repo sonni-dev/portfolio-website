@@ -36,7 +36,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
 {% block datalogs_breadcrumbs %}
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
 {% if tag %}
-<a href="{% url 'blog:tag_list' %}" class="breadcrumb-item">Tags</a>
+<a href="{% url 'blog:tag_list' %}" class="breadcrumb-item"><i class="fas fa-tags"></i> Tags</a>
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
 <span class="breadcrumb-item active">{{ tag.name }}</span>
 {% else %}

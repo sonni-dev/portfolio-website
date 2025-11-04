@@ -1616,7 +1616,7 @@ class SeriesOverviewView(ListView):
     """
 
     model = Series
-    template_name = "blog/series.html"
+    template_name = "blog/series_detail.html"  # For testing, change back to series.html when done
     context_object_name = "series_list"
 
     def get_queryset(self):
@@ -1720,7 +1720,7 @@ class SeriesDetailView(ListView):
     URL: /datalogs/series/<slug>/
     """
     model = Post
-    template_name = "blog/series.html"
+    template_name = "blog/series_detail.html"  # For testing, change back to series.html when done
     context_object_name = "posts"
     paginate_by = 12  # More posts since they're ordered/sequential
 
