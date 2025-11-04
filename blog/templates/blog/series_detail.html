@@ -385,15 +385,15 @@ Explore all DataLog series
                 <div class="no-posts-icon">
                     {% comment %} {% category_hexagon_single category size="lg" show_label=False link=False %} {% endcomment %}
                 </div>
-                <h3 class="no-posts-title">No Entries in {{ category.name }}</h3>
+                <h3 class="no-posts-title">No Entries in {{ series.title }}</h3>
                 <p class="no-posts-message">
-                    There are currently no published entries in the {{ category.name }} category.
-                    Check back later for new content, or explore other categories.
+                    There are currently no published entries in the {{ series.title }} series.
+                    Check back later for new content, or explore other series.
                 </p>
                 <div class="no-posts-actions">
-                    <a href="{% url 'blog:categories_overview' %}" class="glass-btn">
+                    <a href="{% url 'blog:series_overview' %}" class="glass-btn">
                         <i class="fas fa-th-large"></i>
-                        Browse All Categories
+                        Browse All Series
                     </a>
                     <a href="{% url 'blog:post_list' %}" class="glass-btn primary">
                         <i class="fas fa-list"></i>
@@ -407,21 +407,21 @@ Explore all DataLog series
 </section>
 
 <!-- Subscribe widget -->
-<section class="category-subscribe-section" id="subscribe">
+{% comment %} <section class="category-subscribe-section" id="subscribe">
     <div class="container">
         {% include 'blog/includes/subscribe_widget.html' with context_type='category' context_id=category.id context_name=category.name %}
     </div>
-</section>
+</section> {% endcomment %}
 
 {% else %}
 <!-- ========== CATEGORIES OVERVIEW ========== -->
 
-<!-- Search Interface for Categories -->
+{% comment %} <!-- Search Interface for Categories -->
 <section class="categories-search-section">
     <div class="container">
         {% unified_search_interface query=query style='compact' show_quick_filters=False enable_ajax=True placeholder="Search categories and topics..." %}
     </div>
-</section>
+</section> {% endcomment %}
 
 <!-- Main Categories Overview -->
 <section class="categories-overview-main">
@@ -429,22 +429,34 @@ Explore all DataLog series
         
         <!-- Overview Header -->
         <div class="overview-header">
-            <div class="overview-title-section">
-                <h1 class="overview-title">DataLog Categories</h1>
-                <p class="overview-subtitle">Explore comprehensive technical documentation organized by topic and expertise area</p>
+            <div class="unified-page-header" style="margin-bottom: var(--spacing-lg);">
+                <i class="{{ page_icon }} unified-section-icon"></i>
+                <div>
+                    <h1 class="unified-section-title">{{ page_title }}</h1>
+                    <p class="unified-section-subtitle">{{ page_subtitle }}</p>
+                </div>
             </div>
+            {% comment %} <div class="overview-title-section">
+                <h2 class="overview-title">{{ page_title }}</h2>
+                <p class="overview-subtitle">{{ page_subtitle }}</p>
+            </div> {% endcomment %}
             
             <!-- Overview Stats -->
             <div class="overview-stats">
                 <div class="stat-item">
                     <i class="fas fa-icons"></i>
-                    <span class="stat-label">{{ categories.count }}</span>
-                    <span class="stat-text">Categories</span>
+                    <span class="stat-label">{{ total_series }}</span>
+                    <span class="stat-text">Series</span>
                 </div>
                 <div class="stat-item">
                     <i class="fas fa-file-alt"></i>
-                    <span class="stat-label">{{ total_posts|format_number }}</span>
+                    <span class="stat-label">{{ total_posts_in_series|format_number }}</span>
                     <span class="stat-text">Total Entries</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="stat-label">{{ completed_series }}</span>
+                    <span class="stat-text">Completed</span>
                 </div>
                 <div class="stat-item">
                     <i class="fas fa-clock"></i>
@@ -454,190 +466,241 @@ Explore all DataLog series
             </div>
         </div>
         
-        <!-- Featured Categories (if any) -->
-        {% if featured_categories %}
-        <div class="featured-categories-section">
-            <div class="section-header">
-                <h3 class="section-title">
-                    <i class="fas fa-star"></i>
-                    Featured Categories
-                </h3>
+        <!-- Featured Series (if any) -->
+         {% if featured_series %}
+         
+<section class="featured-categories-section">
+    <div class="container">
+        {% with featured_series as series %}
+        <div class="datalog-unified-container series-featured featured" 
+             data-series="{{ series.slug }}">
+             <div class="unified-featured-badge">
+                <i class="fas fa-star"></i>
+                <span>Featured</span>
             </div>
             
-            <div class="featured-categories-grid">
-                {% for category in featured_categories %}
-                <div class="datalog-unified-container compact featured category-card"
-                     data-category="{{ category.slug }}"
-                     style="{% smart_unified_container_vars category=category %}">
+            <!-- Series Title -->
+            <div class="unified-section-header" style="margin-bottom: var(--spacing-lg);">
+                <div>
+                    <h3 class="unified-section-title">{{ series.title }}</h3>
+                    <p class="unified-section-subtitle">{{ series.description }}</p>
+                </div>
+            </div>
+            
+            <!-- Series Badges -->
+            <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
+                <span class="series-badge difficulty-{{ series.difficulty_level }}">
+                    <i class="fas fa-signal"></i>
+                    {{ series.get_difficulty_level_display }}
+                </span>
+                {% if series.is_complete %}
+                <span class="series-status-badge status-complete">
+                    <i class="fas fa-check-circle"></i>
+                    Complete
+                </span>
+                {% else %}
+                <span class="series-status-badge status-in-progress">
+                    <i class="fas fa-spinner"></i>
+                    In Progress
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Main Content Grid -->
+            <div class="unified-content-grid">
+                
+                <!-- LEFT SIDE: Series Information -->
+                <div class="unified-content-info">
                     
-                    <!-- Compact Container Header -->
-                    <div class="unified-container-header">
-                        <div class="unified-featured-badge">
-                            <i class="fas fa-star"></i>
-                            <span>Featured</span>
+                    <!-- Series Stats Section -->
+                    <div class="category-stats-section">
+                        <div class="stats-header unified-section-header" style="color:var(--color-text);">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Series Statistics</span>
                         </div>
-                        
-                        <h3 class="unified-container-title">{{ category.name }}</h3>
-                        
-                        <div class="unified-container-status">
-                            <span class="unified-post-id">{{ category.code|default:category.name|slice:":3"|upper }}</span>
-                            <span class="unified-category-badge">
-                                {% if category.icon %}
-                                <i class="fas {{ category.icon }}"></i>
-                                {% endif %}
-                                {{ category.posts.count }} entries
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- Compact Content -->
-                    <div class="unified-content-grid compact">
-                        <div class="unified-content-info">
-                            {% if category.description %}
-                            <div class="unified-excerpt">
-                                <p>{{ category.description|truncate_smart:100 }}</p>
-                            </div>
-                            {% endif %}
-                            
-                            <!-- Compact Stats -->
-                            <div class="unified-meta-section compact">
-                                <div class="unified-stats-grid">
-                                    <div class="unified-stat-item">
-                                        <i class="fas fa-file-alt"></i>
-                                        <span>{{ category.posts.count }} entr{{ category.posts.count|pluralize:"y,ies" }}</span>
-                                    </div>
-                                    {% if category.avg_reading_time %}
-                                    <div class="unified-stat-item">
-                                        <i class="fas fa-clock"></i>
-                                        <span>{{ category.avg_reading_time|format_duration }} avg</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if category.difficulty %}
-                                    <div class="unified-stat-item">
-                                        <i class="fas fa-signal"></i>
-                                        <span>{{ category.get_difficulty_display }}</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Compact Footer -->
-                    <div class="unified-container-footer compact">
-                        <div class="unified-footer-stats">
+                        <div class="unified-stats-grid">
                             <div class="unified-stat-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span>{{ category.latest_post.published_date|time_since_published }}</span>
+                                <i class="fas fa-file-alt"></i>
+                                <span>{{ series.posts.count }} entr{{ series.posts.count|pluralize:"y,ies" }}</span>
                             </div>
-                        </div>
-                        
-                        <div class="unified-footer-actions">
-                            <a href="{% url 'blog:category' slug=category.slug %}" class="unified-action-btn primary">
-                                <i class="fas fa-arrow-right"></i>
-                                Explore
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- All Categories Grid -->
-        <div class="all-categories-section">
-            <div class="section-header">
-                <h3 class="section-title">
-                    <i class="fas fa-th-large"></i>
-                    All Categories
-                </h3>
-                <div class="section-actions">
-                    {% comment %} <button class="view-toggle-btn disabled" data-view="grid">
-                        <i class="fas fa-th-large"></i>
-                        Grid
-                    </button> {% endcomment %}
-                    <button class="view-toggle-btn active" data-view="list">
-                        <i class="fas fa-list"></i>
-                        List
-                    </button>
-                </div>
-            </div>
-            
-            <div class="categories-grid-container" id="categoriesGrid">
-                {% for category in categories %}
-                <div class="datalog-unified-container compact category-card"
-                     data-category="{{ category.slug }}"
-                     style="{% smart_unified_container_vars category=category %}">
-                    
-                    <!-- Compact Container Header -->
-                    <div class="unified-container-header">
-                        <h3 class="unified-container-title">{{ category.name }}</h3>
-                        
-                        <div class="unified-container-status">
-                            <span class="unified-post-id">{{ category.code|default:category.name|slice:":3"|upper }}</span>
-                            <span class="unified-category-badge">
-                                {% if category.icon %}
-                                <i class="fas {{ category.icon }}"></i>
-                                {% endif %}
-                                {{ category.posts.count }} entr{{ category.posts.count|pluralize:"y,ies"}}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- Compact Content -->
-                    <div class="unified-content-grid compact">
-                        <div class="unified-content-info">
-                            {% if category.description %}
-                            <div class="unified-excerpt">
-                                <p>{{ category.description|truncate_smart:80 }}</p>
-                            </div>
-                            {% endif %}
                             
-                            <!-- Popular Tags for Category -->
-                            {% if category.popular_tags %}
-                            <div class="unified-tags-section compact">
-                                <div class="unified-tags-list">
-                                    {% for tag in category.popular_tags|slice:":3" %}
-                                    <a href="{% url 'blog:tag' slug=tag.slug %}" class="unified-tag">
-                                        {{ tag.name }}
-                                    </a>
-                                    {% endfor %}
-                                    {% if category.popular_tags.count > 3 %}
-                                    <span class="unified-more-tags">+{{ category.popular_tags.count|add:"-3" }}</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <!-- Compact Footer -->
-                    <div class="unified-container-footer compact">
-                        <div class="unified-footer-stats">
                             <div class="unified-stat-item">
                                 <i class="fas fa-clock"></i>
-                                <span>{{ category.avg_reading_time|format_duration|default:"—" }}</span>
+                                <span>{{ series.total_reading_time|format_duration }} total reading</span>
                             </div>
-                            {% if category.latest_post %}
+                            
                             <div class="unified-stat-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span>{{ category.latest_post.published_date|time_since_published }}</span>
+                                <i class="fas fa-chart-line"></i>
+                                <span>{{ series.get_progress_percentage|floatformat:0 }}% Progress</span>
                             </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="unified-footer-actions">
-                            <a href="{% url 'blog:category' slug=category.slug %}" class="unified-action-btn primary">
-                                <i class="fas fa-arrow-right"></i>
-                                Explore
-                            </a>
+                            
                         </div>
                     </div>
+                    
+                    <!-- Recent Posts Preview -->
+                    <div style="margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                        <div style="font-size: 0.7rem; font-weight: 600; color: var(--color-lavender); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--spacing-xs);">
+                            Recent Entries
+                        </div>
+                        {% for post in featured_details.recent_posts %}
+                            <a href="{% url 'blog:post_detail' slug=post.slug %}" class="related-category-item">
+                        <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                            • {{ post.title|truncatechars:40 }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    
+                    <!-- Actions Section -->
+                    <div class="unified-actions-section">
+                        <a href="{% url 'blog:series_overview' %}" class="unified-action-btn">
+                            <i class="fas fa-layer-group"></i>
+                            All Series
+                        </a>
+        
+                    </div>
+                    
                 </div>
-                {% endfor %}
+
+                <!-- RIGHT: Series Thumbnail -->
+                <div class="unified-content-media">
+                    {% if series.thumbnail %}
+                    <img src="{{ series.thumbnail.url }}" alt="{{ series.title }}" style="width: 100%; border-radius: var(--border-radius-lg); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    {% else %}
+                    <div class="series-thumbnail-placeholder" style="height: 400px;">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                
             </div>
+            
+            <!-- Container Footer -->
+            <div class="unified-container-footer">
+                <div class="unified-footer-stats">
+                    <div class="unified-stat-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Last updated {{ series.updated_at|time_since_published }}</span>
+                    </div>
+                    <div class="unified-stat-item">
+                        <i class="fas fa-tags"></i>
+                        <span>{{ featured_details.series_tags.count|default:0 }} unique tag{{ featured_details.series_tags.count|pluralize }}</span>
+                    </div>
+                    <div class="unified-stat-item">
+                        <i class="fas fa-icons"></i>
+                        <span>{{ featured_details.series_categories.count|default:0 }} categor{{ featured_details.series_categories.count|pluralize:"y,ies" }}</span>
+                    </div>
+                </div>
+                
+                <div class="unified-footer-actions">
+                    {% comment %} <a href="{% url 'blog:category' slug=category.slug %}#subscribe" class="unified-action-btn"><i class="fas fa-bell me-2"></i>Subscribe</a> {% endcomment %}
+                    {% comment %} <button class="unified-footer-action-btn" title="Subscribe to Category">
+                        <i class="fas fa-bell"></i>
+                    </button> {% endcomment %}
+                    {% comment %} <button class="unified-footer-action-btn" title="RSS Feed">
+                        <i class="fas fa-rss"></i>
+                    </button> {% endcomment %}
+                    {% comment %} <button class="unified-footer-action-btn" title="Share Category">
+                        <i class="fas fa-share-alt"></i>
+                    </button> {% endcomment %}
+                </div>
+            </div>
+            
         </div>
+    </div>
+</section>
+{% endwith %}
+{% endif %}
+        
+        <!-- Series Grid -->
+    <div class="series-overview-grid">
+        {% for series in series_list %}
+        <div class="series-card">
+            <a href="{% url 'blog:series_detail' slug=series.slug %}" style="text-decoration: none; color: inherit;">
+                
+                <!-- Thumbnail -->
+                {% if series.thumbnail %}
+                <img src="{{ series.thumbnail.url }}" alt="{{ series.title }}" class="series-thumbnail">
+                {% else %}
+                <div class="series-thumbnail-placeholder">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                {% endif %}
+                
+                <!-- Series Info -->
+                <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: var(--spacing-sm); color: var(--color-text);">
+                    {{ series.title }}
+                </h3>
+                
+                {% if series.description %}
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: var(--spacing-md);">
+                    {{ series.description|truncatewords:25 }}
+                </p>
+                {% endif %}
+                
+                <!-- Badges -->
+                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
+                    <span class="series-badge difficulty-{{ series.difficulty_level }}">
+                        {{ series.get_difficulty_level_display }}
+                    </span>
+                    {% if series.is_complete %}
+                    <span class="series-status-badge status-complete">
+                        <i class="fas fa-check-circle"></i>
+                        Complete
+                    </span>
+                    {% else %}
+                    <span class="series-status-badge status-in-progress">
+                        <i class="fas fa-spinner"></i>
+                        In Progress
+                    </span>
+                    {% endif %}
+                    {% if series.is_featured %}
+                    <span class="series-badge" style="background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">
+                        <i class="fas fa-star"></i> Featured
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Stats -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm); text-align: center; padding-top: var(--spacing-md); border-top: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: var(--spacing-sm);">
+                    <div>
+                        <div style="font-weight: 700; color: var(--color-text); font-size: 1.2rem;">{{ series.actual_post_count }}</div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase;">Posts</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: var(--color-text); font-size: 1.2rem;">{{ series.total_reading_time|format_duration }}</div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase;">Duration</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: var(--color-text); font-size: 1.2rem;">
+                            {% if series.is_complete %}100{% else %}{{ series.get_progress_percentage|floatformat:0 }}{% endif %}%
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase;">Progress</div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="series-progress-bar">
+                    <div class="series-progress-fill" style="width: {% if series.is_complete %}100{% else %}{{ series.get_progress_percentage|floatformat:0 }}{% endif %}%;"></div>
+                </div>
+                
+                <!-- Recent Posts Preview -->
+                {% if series.recent_posts %}
+                <div style="margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div style="font-size: 0.7rem; font-weight: 600; color: var(--color-lavender); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--spacing-xs);">
+                        Recent Entries
+                    </div>
+                    {% for post in series.recent_posts %}
+                    <div style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                        • {{ post.title|truncatechars:40 }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
         
     </div>
 </section>

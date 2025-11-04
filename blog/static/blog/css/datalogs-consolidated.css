@@ -787,6 +787,22 @@
     letter-spacing: 0.5px;
 }
 
+.unified-page-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: rgba(var(--container-category-rgb, 179, 157, 219), 1);
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.unified-section-title {
+    font-size: 2rem;
+}
+
 /* Meta section specific styling */
 .unified-meta-section {
     /* Uses base unified-section styles */

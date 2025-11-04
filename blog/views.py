@@ -1638,12 +1638,29 @@ class SeriesOverviewView(ListView):
             series_associations__isnull=False,
             status='published'
         ).distinct().count()
+        
+
+        # Add recent posts to each series (for preview)
+        for series in series_list:
+            series.recent_posts = Post.objects.filter(
+                series_associations__series=series,
+                status='published'
+            ).order_by('series_associations__order')[:3]
+
+            # Calculate actual post count for display
+            series.actual_post_count = series.posts.filter(
+                post__status='published'
+            ).count()
 
         # Get most popular series (by post count)
         most_popular = series_list.first() if series_list else None
 
-        # Get featured series
-        featured_series = series_list.filter(is_featured=True)
+        # Get latest featured series
+        featured_series = series_list.filter(is_featured=True).order_by('-updated_at').first()
+
+        # Get featured series details
+        featured_details = self.get_featured_series_data(featured_series)
+
 
         # Series completion stats
         completed_series = series_list.filter(is_complete=True).count()
@@ -1666,18 +1683,6 @@ class SeriesOverviewView(ListView):
             posts__post__status='published'
         ).distinct().count()
 
-        # Add recent posts to each series (for preview)
-        for series in series_list:
-            series.recent_posts = Post.objects.filter(
-                series_associations__series=series,
-                status='published'
-            ).order_by('series_associations__order')[:3]
-
-            # Calculate actual post count for display
-            series.actual_post_count = series.posts.filter(
-                post__status='published'
-            ).count()
-
         # Difficulty distribution
         difficulty_stats = {}
         for choice in Series._meta.get_field('difficulty_level').choices:
@@ -1690,6 +1695,7 @@ class SeriesOverviewView(ListView):
             'total_posts_in_series': total_posts_in_series,
             'most_popular_series': most_popular,
             'featured_series': featured_series,
+            "featured_details": featured_details,
             'completed_series': completed_series,
             'in_progress_series': in_progress_series,
             'total_reading_time': total_reading_time,
@@ -1709,6 +1715,38 @@ class SeriesOverviewView(ListView):
         })
 
         return context
+    
+    def get_featured_series_data(self, series):
+        """Get detailed featured series data for featured card."""
+        if not series:
+            return None
+        
+        # Add recent posts to series (for preview)
+        series_posts = SeriesPost.objects.filter(
+            series=series
+        ).select_related('post').order_by('order')
+
+        recent_posts = Post.objects.filter(
+            series_associations__series=series,
+            status='published'
+        ).order_by('series_associations__order')[:3]
+
+        # Tags used
+        series_tags = Tag.objects.filter(
+            posts__in=[p.post for p in series_posts]
+        ).distinct()
+
+        # Categories used
+        series_categories = Category.objects.filter(
+            posts__in=[p.post for p in series_posts]
+        ).distinct()
+
+        return {
+            'series_posts': series_posts,
+            'recent_posts': recent_posts,
+            'series_tags': series_tags,
+            'series_categories': series_categories,
+        }
 
 
 
