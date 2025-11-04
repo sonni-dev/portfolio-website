@@ -352,7 +352,7 @@ class CategoriesOverviewView(ListView):
             # Overview page metadata
             "page_title": "Categories Overview",
             "page_subtitle": "Explore technical insights by expertise area",
-            "page_icon": "fas fa-th-large",
+            "page_icon": "fas fa-icons",
 
             # Overview Stats
             "total_categories": total_categories,
@@ -494,6 +494,7 @@ class TagListView(ListView):
             'query': query,
             'page_title': 'Tags Overview',
             'page_subtitle': 'Explore DataLog tags',
+            'page_icon': 'fa-solid fa-tags',
             'show_breadcrumbs': True,
         })
 

@@ -344,12 +344,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
 {% else %}
 <!-- ========== TAGS OVERVIEW ========== -->
 
-<!-- Search Interface for Tags -->
-<section class="tags-search-section">
-    <div class="container">
-        {% unified_search_interface query=query style='compact' show_quick_filters=False enable_ajax=True placeholder="Search tags and topics..." %}
-    </div>
-</section>
+
 
 <!-- Main Tags Overview -->
 <section class="tags-overview-main">
@@ -357,9 +352,12 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
         
         <!-- Overview Header -->
         <div class="overview-header">
-            <div class="overview-title-section">
-                <h1 class="overview-title">DataLog Tags</h1>
-                <p class="overview-subtitle">Explore comprehensive technical documentation organized by technology, concept, and implementation approach</p>
+            <div class="unified-page-header" style="margin-bottom: var(--spacing-lg);">
+                <i class="{{ page_icon }} unified-section-icon"></i>
+                <div>
+                    <h1 class="unified-section-title">{{ page_title }}</h1>
+                    <p class="unified-section-subtitle">{{ page_subtitle }}</p>
+                </div>
             </div>
             
             <!-- Overview Stats -->
@@ -381,6 +379,13 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
                 </div>
             </div>
         </div>
+
+        <!-- Search Interface for Tags -->
+<section class="tags-search-section">
+    <div class="container">
+        {% unified_search_interface query=query style='compact' show_quick_filters=False enable_ajax=True placeholder="Search tags and topics..." %}
+    </div>
+</section>
         
         <!-- Popular Tags Cloud -->
         {% if popular_tags %}
