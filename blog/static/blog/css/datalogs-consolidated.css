@@ -6569,7 +6569,7 @@
 #postContent h4,
 #postContent h5,
 #postContent h6 {
-    color: var(--color-text);
+    color: var(--color-lavender);
     font-family: var(--font-heading);
     font-weight: 600;
     line-height: 1.3;
