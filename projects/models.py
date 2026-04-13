@@ -2026,6 +2026,10 @@ class SystemFeature(models.Model):
         ('performance', 'Performance'),
         ('security', 'Security'),
         ('ui', 'User Interface'),
+        # Added while entering data
+        ('visualization', 'Visualization'),
+        ('data_display', 'Data Display'),
+        ('user_tool', 'User Tool'),
     )
 
     IMPLEMENTATION_STATUSES = (
@@ -2080,13 +2084,16 @@ class SystemMetric(models.Model):
     """Performance and operational metrics for HUD dashboard display."""
 
     METRIC_TYPES = (
-        ('performance', 'Performace'),
+        ('performance', 'Performance'),
         ('usage', 'Usage'),
         ('uptime', 'Uptime'),
         ('response_time', 'Response Time'),
         ('throughput', 'Throughput'),
         ('error_rate', 'Error Rate'),
         ('custom', 'Custom'),
+        # Added with data entry
+        ('development', 'Development'),
+        ('technical', 'Technical'),
     )
 
     system = models.ForeignKey(
